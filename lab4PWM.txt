@@ -26,9 +26,9 @@ int main (void){
 		if(temp == 1){
 			Tc *tc = TC4;
 			TcCount8 *tcc = &tc->COUNT8;
-			tcc->CTRLC.bit.INVEN1 = 0;	//clear the inversion
+			tcc->CTRLC.bit.INVEN1 = 1;	//clear the inversion
 			while(tcc->STATUS.bit.SYNCBUSY){}	//wait for sync 	
-			tcc->CC[1].reg = 0;	//compare match
+			tcc->CC[1].reg = result;	//compare match
 			tcc->CC[0].reg = result;	//compare match			
 			porA->OUTSET.reg = PORT_PA12;
 			//wait(2);
@@ -38,20 +38,6 @@ int main (void){
 		}
 		
 		if(temp == 2){
-			Tc *tc = TC4;
-			TcCount8 *tcc = &tc->COUNT8;
-			tcc->CTRLC.bit.INVEN1 = 1;	//invert signal
-			while(tcc->STATUS.bit.SYNCBUSY){}	//wait for sync 	
-			tcc->CC[0].reg = 0;	//compare match
-			tcc->CC[1].reg = result;	//compare match
-			porA->OUTSET.reg = PORT_PA12;
-			//wait(2);
-			ADC->CTRLA.reg |= 1<<1;	//re-enable ADC
-			while (ADC->STATUS.bit.SYNCBUSY==1){}	//wait for enable to complete
-			temp = 0;
-		}
-		
-		if(temp == 3){
 			Tc *tc = TC4;
 			TcCount8 *tcc = &tc->COUNT8;
 			tcc->CTRLC.bit.INVEN1 = 0;	//invert signal
@@ -184,14 +170,15 @@ void ADC_Handler(void){
 	ADC->CTRLA.reg = 0<<1;	//disable ADC
 	while (ADC->STATUS.bit.SYNCBUSY==1){}	//wait for enable to complete
 	result = ADC->RESULT.reg;
+	//temp = 1;
 	if(result >= 150){
 		temp = 1;
 	}
 	 else if(result <= 106){
-		temp = 2;
+		temp = 1;
 	}
 	else{
-		temp = 3;
+		temp = 2;
 	}
 
 	
@@ -284,18 +271,9 @@ void Timer4Setup(void){
 	tcc->PER.reg = 0xff;
 	tcc->CTRLBSET.bit.ONESHOT = 0;	//turn off one shot mode
 	while(tcc->STATUS.bit.SYNCBUSY){}	//wait for sync to complete	
-//	tcc->INTENSET.bit.OVF = 1;	//enable the overflow interrupt
-	//while(tcc->STATUS.bit.SYNCBUSY){}	//wait for sync to complete	
 	tcc->CTRLA.reg |= 1<<1;	//enable the TC4
-	while(tcc->STATUS.bit.SYNCBUSY){}	//wait for sync of enable
-	//NVIC->ISER[0] |= 1<<19;	//enable the NVIC handler for TC4
-	//tcc->CC[0].reg = 0xF;	//period
 	while(tcc->STATUS.bit.SYNCBUSY){}	//wait for sync of disable
-	//tcc->CC[1].reg = 0xF;	//compare match
-	while(tcc->STATUS.bit.SYNCBUSY){}	//wait for sync of disable
-	//tcc->CTRLC.bit.INVEN1 = 1;
-	//while(tcc->STATUS.bit.SYNCBUSY){}	//wait for sync 	
-
+	tcc->CTRLC.bit.INVEN1 = 1;
 }
 
 void TC4_Handler(void){
